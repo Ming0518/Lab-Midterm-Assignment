@@ -27,7 +27,7 @@ class _ItemTabScreenState extends State<ItemTabScreen> {
   @override
   void initState() {
     super.initState();
-    loadsellerCatches();
+    loaduserItems();
     print("Seller");
   }
 
@@ -46,88 +46,92 @@ class _ItemTabScreenState extends State<ItemTabScreen> {
     } else {
       axiscount = 2;
     }
+
     return Scaffold(
-      body: itemList.isEmpty
-          ? const Center(
-              child: Text("No Data"),
-            )
-          : Column(children: [
-              const SizedBox(
-                height: 10,
-              ),
-              Container(
-                height: 24,
-                color: Colors.lightGreen,
-                alignment: Alignment.center,
-                child: Text(
-                  "${itemList.length} Items Found",
-                  style: const TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: GridView.count(
-                    shrinkWrap: true,
-                    crossAxisCount: axiscount,
-                    children: List.generate(
-                      itemList.length,
-                      (index) {
-                        return Container(
-                          height: 400, // Set the desired height for the card
-                          child: Card(
-                            child: InkWell(
-                              onLongPress: () {
-                                onDeleteDialog(index);
-                              },
-                              onTap: () async {
-                                Item singlecatch =
-                                    Item.fromJson(itemList[index].toJson());
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (content) => EditItemScreen(
-                                      user: widget.user,
-                                      useritem: singlecatch,
-                                    ),
-                                  ),
-                                );
-                                loadsellerCatches();
-                              },
-                              child: Column(
-                                children: [
-                                  CachedNetworkImage(
-                                    width: screenWidth,
-                                    fit: BoxFit.cover,
-                                    imageUrl:
-                                        "${MyConfig().SERVER}/barterlt/assets/items/${itemList[index].itemId}_1.png",
-                                    placeholder: (context, url) =>
-                                        const LinearProgressIndicator(),
-                                    errorWidget: (context, url, error) =>
-                                        const Icon(Icons.error),
-                                  ),
-                                  Text(
-                                    itemList[index].itemName.toString(),
-                                    style: const TextStyle(fontSize: 15),
-                                  ),
-                                  Text(
-                                    "Condition: ${double.parse(itemList[index].itemValue.toString()).toStringAsFixed(2)}/10.00",
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  Text(
-                                    "${itemList[index].itemState},${itemList[index].itemLocality}",
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+      body: RefreshIndicator(
+          onRefresh: _refresh,
+          child: itemList.isEmpty
+              ? const Center(
+                  child: Text("No Data"),
+                )
+              : Column(children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Container(
+                    height: 24,
+                    color: Colors.lightGreen,
+                    alignment: Alignment.center,
+                    child: Text(
+                      "${itemList.length} Items Found",
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
-                ),
-              )
-            ]),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        crossAxisCount: axiscount,
+                        children: List.generate(
+                          itemList.length,
+                          (index) {
+                            return Container(
+                              height:
+                                  400, // Set the desired height for the card
+                              child: Card(
+                                child: InkWell(
+                                  onLongPress: () {
+                                    onDeleteDialog(index);
+                                  },
+                                  onTap: () async {
+                                    Item singlecatch =
+                                        Item.fromJson(itemList[index].toJson());
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (content) => EditItemScreen(
+                                          user: widget.user,
+                                          useritem: singlecatch,
+                                        ),
+                                      ),
+                                    );
+                                    loaduserItems();
+                                  },
+                                  child: Column(
+                                    children: [
+                                      CachedNetworkImage(
+                                        width: screenWidth,
+                                        fit: BoxFit.cover,
+                                        imageUrl:
+                                            "${MyConfig().SERVER}/barterlt/assets/items/${itemList[index].itemId}_1.png",
+                                        placeholder: (context, url) =>
+                                            const LinearProgressIndicator(),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(Icons.error),
+                                      ),
+                                      Text(
+                                        itemList[index].itemName.toString(),
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                      Text(
+                                        "Condition: ${double.parse(itemList[index].itemValue.toString()).toStringAsFixed(2)}/10.00",
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      Text(
+                                        "${itemList[index].itemState},${itemList[index].itemLocality}",
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  )
+                ])),
       floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.green,
           onPressed: () async {
@@ -138,7 +142,7 @@ class _ItemTabScreenState extends State<ItemTabScreen> {
                       builder: (content) => NewItemScreen(
                             user: widget.user,
                           )));
-              loadsellerCatches();
+              loaduserItems();
             } else {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text("Please login/register an account")));
@@ -151,7 +155,7 @@ class _ItemTabScreenState extends State<ItemTabScreen> {
     );
   }
 
-  void loadsellerCatches() {
+  void loaduserItems() {
     if (widget.user.id == "na") {
       setState(() {
         // titlecenter = "Unregistered User";
@@ -228,12 +232,19 @@ class _ItemTabScreenState extends State<ItemTabScreen> {
         if (jsondata['status'] == "success") {
           ScaffoldMessenger.of(context)
               .showSnackBar(const SnackBar(content: Text("Delete Success")));
-          loadsellerCatches();
+          loaduserItems();
         } else {
           ScaffoldMessenger.of(context)
               .showSnackBar(const SnackBar(content: Text("Failed")));
         }
       }
+    });
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      itemList.clear();
+      loaduserItems();
     });
   }
 }
